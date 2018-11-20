@@ -14,25 +14,52 @@ from tkinter.filedialog import askopenfilename
 
 import numpy as np
 import pandas as pd
+from scipy import spatial
 
 # Calculate features
 
 # calculate distance
-def calc_dist():
-    ...
+def calc_dist(data):
+    dist_head = np.diagonal(spatial.distance.squareform(spatial.distance.pdist(data[:,0:2],'euclidean')),1)
+    dist_neck = np.diagonal(spatial.distance.squareform(spatial.distance.pdist(data[:,2:4],'euclidean')),1)
+    dist_body = np.diagonal(spatial.distance.squareform(spatial.distance.pdist(data[:,4:6],'euclidean')),1)
+    dist_rear = np.diagonal(spatial.distance.squareform(spatial.distance.pdist(data[:,6:8],'euclidean')),1)
+    dist_tail = np.diagonal(spatial.distance.squareform(spatial.distance.pdist(data[:,8:10],'euclidean')),1)
+    distmat = np.transpose([dist_head,dist_neck,dist_body,dist_rear,dist_tail])
+    return distmat
 
 # calculate velocity
-def calc_velocity():
-    ...
+def calc_velocity(distmat):
+    nframes = 9000
+    fps = 15
+    vidduration = nframes/fps
+    timestep = vidduration/nframes
+    velmat = distmat/timestep
+    return velmat
 
-# calculate velocity
-def calc_acceleration():
-    ...
+# calculate acceleration
+def calc_acceleration(velmat):
+    #make a matrix that is shifted vertically by 1
+    rollmat = np.roll(velmat,1,axis=0)
+    #make first row of shifted matrix 0 since it is the initial point in time
+    rollmat[0] = 0
+    #subtract the original velocity matrix from the shifted matrix
+    accelmat = velmat-rollmat
+    return accelmat
 
 # calculate logical array 0000 or 11111, if animal moved in last 10 sec move to 1 else 0
 def calc_relative_motion():
     ...
 
+# calculate distance relative to body of animal
+def calc_dist_from_body(data):
+    pos_head = data[:,0:2] - data[:,4:6]
+    pos_neck = data[:,2:4] - data[:,4:6]
+    pos_body = data[:,4:6] - data[:,4:6]
+    pos_rear = data[:,6:8] - data[:,4:6]
+    pos_tail = data[:,8:10] - data[:,4:6]
+    distfrombody = np.hstack((pos_head,pos_neck,pos_body,pos_rear,pos_tail))
+    return distfrombody
 
 def do_lda(data):
     ...
@@ -57,6 +84,7 @@ if __name__ == '__main__':
         Tk().withdraw() 
         dataname = askopenfilename() # get filename
         #dataname = 'e3v8103_day_subclipDeepCut_resnet50_ratmovementNov5shuffle1_22500.h5'
+        
         df = pd.read_hdf(dataname)
 
         # structure of dataframe 
@@ -92,3 +120,8 @@ if __name__ == '__main__':
 
         do_pca(m)
 
+        #get features for PCA/LDA
+        distmat = calc_dist(m)
+        velmat = calc_velocity(distmat)
+        accelmat = calc_acceleration(velmat)
+        distfrombody = calc_dist_from_body(m)
