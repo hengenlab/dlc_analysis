@@ -79,6 +79,10 @@ def do_pca(data):
     sigma = projected_data.std(axis=0).mean()
     print(eigenvectors)
 
+def plot_tsne_out(out_tsne):
+    from matplotlib import pyplot as plt
+    plt.scatter(out_tsne[:,0], out_tsne[:,1])
+    plt.show()
 
 if __name__ == '__main__':
 
