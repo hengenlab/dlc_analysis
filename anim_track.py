@@ -87,8 +87,11 @@ if __name__ == '__main__':
         feature_coords = 3
 
         # open file browser
-        Tk().withdraw() 
-        dataname = askopenfilename() # get filename
+        if len(sys.argv) > 1:
+            dataname = (sys.argv[1])
+        else:
+            Tk().withdraw() 
+            dataname = askopenfilename() # open file browser
         #dataname = 'e3v8103_day_subclipDeepCut_resnet50_ratmovementNov5shuffle1_22500.h5'
         
         df = pd.read_hdf(dataname)
@@ -131,3 +134,8 @@ if __name__ == '__main__':
         velmat = calc_velocity(distmat)
         accelmat = calc_acceleration(velmat)
         distfrombody = calc_dist_from_body(m)
+
+        # Feature matrix
+        feature_mat = np.hstack((distmat, velmat, accelmat))
+        print(feature_mat.shape)
+
