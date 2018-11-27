@@ -67,7 +67,7 @@ def do_lda(data):
 def do_tsnei(data, ncomponents, verbosity, iperplexity, maxiter):
     from sklearn.manifold import TSNE
     tsne = TSNE(n_components=ncomponents, verbose=verbosity, perplexity=iperplexity, n_iter=maxiter)
-    tsne_results = tsne.fit_transform(df.loc[rndperm[:n_sne],feat_cols].values)
+    tsne_results = tsne.fit_transform(data)
     return tsne_results
 
 def do_pca(data):
@@ -138,4 +138,9 @@ if __name__ == '__main__':
         # Feature matrix
         feature_mat = np.hstack((distmat, velmat, accelmat))
         print(feature_mat.shape)
+
+        # t-sne
+        # def do_tsnei(data, ncomponents, verbosity, iperplexity, maxiter):
+        r_tsne = do_tsnei(feature_mat, 2, 0, 100, 1000)
+
 
