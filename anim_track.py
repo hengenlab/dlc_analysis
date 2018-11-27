@@ -90,6 +90,24 @@ def plot_tsne_out(out_tsne):
     plt.scatter(out_tsne[:,0], out_tsne[:,1])
     plt.show()
 
+def plot_tsne_out_3d(out_tsne):
+    from mpl_toolkits.mplot3d import Axes3D
+    import matplotlib.pyplot as plt
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    x = out_tsne[:,0]
+    y = out_tsne[:,1]
+    z = out_tsne[:,2]
+
+    ax.scatter(x, y, z, c='r', marker='o')
+    #ax.set_xlabel('X Label')
+    #ax.set_ylabel('Y Label')
+    #ax.set_zlabel('Z Label')
+    plt.show()
+
+
 if __name__ == '__main__':
 
     # Constants
@@ -151,6 +169,9 @@ if __name__ == '__main__':
 
         # t-sne
         # def do_tsnei(data, ncomponents, verbosity, iperplexity, maxiter):
-        r_tsne = do_tsnei(feature_mat, 2, 0, 100, 1000)
+        r_tsne = do_tsnei(feature_mat, 3, 0, 100, 1000)
 
+        # plot
+        plot_tsne_out(r_tsne)
+        # plot 3d plot_tsne_out_3d(r_tsne)
 
