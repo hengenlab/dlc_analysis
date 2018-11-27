@@ -51,6 +51,12 @@ def calc_acceleration(velmat):
 def calc_relative_motion():
     ...
 
+# Temporal what was happening 5 min earlier
+def calc_previous_state():
+    tol_val = 0.01
+    ...
+
+
 # calculate distance relative to body of animal
 def calc_dist_from_body(data):
     pos_head = data[:,0:2] - data[:,4:6]
