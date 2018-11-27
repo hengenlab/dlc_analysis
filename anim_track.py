@@ -156,7 +156,6 @@ if __name__ == '__main__':
         # remove likelihood column
         m = np.delete(o, np.arange(feature_coords-1, nfeatures*feature_coords , feature_coords), axis=1)
 
-        do_pca(m)
 
         #get features for PCA/LDA
         distmat = calc_dist(m)
@@ -168,9 +167,12 @@ if __name__ == '__main__':
         feature_mat = np.hstack((distmat, velmat, accelmat))
         print(feature_mat.shape)
 
+        # do pca
+        proj_data, eig_vec, eig_val  = do_pca(feature_mat)
+
         # t-sne
         # def do_tsnei(data, ncomponents, verbosity, iperplexity, maxiter):
-        r_tsne = do_tsnei(feature_mat, 3, 0, 100, 1000)
+        r_tsne = do_tsnei(feature_mat, 2, 0, 100, 1000)
 
         # plot
         plot_tsne_out(r_tsne)
