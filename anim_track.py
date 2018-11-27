@@ -64,6 +64,12 @@ def calc_dist_from_body(data):
 def do_lda(data):
     ...
 
+def do_tsnei(data, ncomponents, verbosity, iperplexity, maxiter):
+    from sklearn.manifold import TSNE
+    tsne = TSNE(n_components=ncomponents, verbose=verbosity, perplexity=iperplexity, n_iter=maxiter)
+    tsne_results = tsne.fit_transform(df.loc[rndperm[:n_sne],feat_cols].values)
+    return tsne_results
+
 def do_pca(data):
     mu = data.mean(axis=0)
     data = data - mu
