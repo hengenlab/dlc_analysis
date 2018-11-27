@@ -172,7 +172,7 @@ if __name__ == '__main__':
 
         # t-sne
         # def do_tsnei(data, ncomponents, verbosity, iperplexity, maxiter):
-        r_tsne = do_tsnei(feature_mat, 2, 0, 100, 1000)
+        r_tsne = do_tsnei(proj_data, 2, 0, 100, 1000)
 
         # plot
         plot_tsne_out(r_tsne)
