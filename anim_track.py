@@ -72,19 +72,24 @@ def do_lda(data):
 
 def do_tsnei(data, ncomponents, verbosity, iperplexity, maxiter):
     from sklearn.manifold import TSNE
-    tsne = TSNE(n_components=ncomponents, verbose=verbosity, perplexity=iperplexity, n_iter=maxiter)
-    tsne_results = tsne.fit_transform(data)
+    from sklearn.metrics import pairwise_distances
+
+    distance_matrix = pairwise_distances(data, data, metric='cosine', n_jobs=-1)
+
+    tsne = TSNE(n_components=ncomponents, verbose=verbosity, perplexity=iperplexity, n_iter=maxiter, metric='precomputed')
+    #tsne_results = tsne.fit_transform(data)
+    tsne_results = tsne.fit_transform(distance_matrix)
     return tsne_results
 
 def do_pca(data):
     mu = data.mean(axis=0)
     data = data - mu
-    # data = (data - mu)/data.std(axis=0)  # Uncommenting this reproduces mlab.PCA results
+    data = (data - mu)/data.std(axis=0)  # Uncommenting this reproduces mlab.PCA results
     eigenvectors, eigenvalues, V = np.linalg.svd(data.T, full_matrices=False)
     projected_data = np.dot(data, eigenvectors)
     sigma = projected_data.std(axis=0).mean()
     print(eigenvectors)
-    return projected_data, eigenvectors, eigenvalues
+    return projected_data, eigenvectors, eigenvalues, V, sigma
 
 def plot_tsne_out(out_tsne):
     from matplotlib import pyplot as plt
@@ -109,72 +114,123 @@ def plot_tsne_out_3d(out_tsne):
     plt.show()
 
 
-if __name__ == '__main__':
+def do_kmeans(data, k):
+    from sklearn.cluster import KMeans
+    #seed = 0
+    #km = KMeans(n_clusters=k, 'random', n_init=10, max_iter=1000, random_state=seed)
+    km = KMeans(n_clusters=k, n_init=100, max_iter=10000, tol=1e-6)
+    km.fit(data)
+    y_cluster_kmeans = km.predict(data)
+    return y_cluster_kmeans
 
-    # Constants
-        nfeatures = 5
-        feature_coords = 3
 
-        # open file browser
-        if len(sys.argv) > 1:
-            dataname = (sys.argv[1])
-        else:
-            Tk().withdraw() 
-            dataname = askopenfilename() # open file browser
-        #dataname = 'e3v8103_day_subclipDeepCut_resnet50_ratmovementNov5shuffle1_22500.h5'
+def plot_with_labels(out_tsne, label):
+        import numpy as np
+        from matplotlib import pyplot as plt
+        x = out_tsne[:,0]
+        y = out_tsne[:,1]
         
-        df = pd.read_hdf(dataname)
-
-        # structure of dataframe 
-        # scorer    Bodyparts   x   y   likelihood
-        #            head
-        #            neck
-        #            body
-        #            rear
-        #            tail
+        fig, ax = plt.subplots()
+        for l in np.unique(label):
+             i = np.where(label == l)
+             ax.scatter(x[i], y[i], [], label = l)
+             
+        #ax.legend()
+        plt.show()
 
 
-        # List columns
-        #list(df)
 
-        #df.columns
-
-        print(df.columns.contains)
-        # <bound method MultiIndex.__contains__ of MultiIndex(levels=[['DeepCut_resnet50_ratmovementNov5shuffle1_22500'], ['body', 'head', 'neck', 'rear', 'tail'], ['likelihood', 'x', 'y']],
-        #                   labels=[[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 2, 2, 2, 0, 0, 0, 3, 3, 3, 4, 4, 4], [1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0]],
-        #                   names=['scorer', 'bodyparts', 'coords'])>
-
-
-        #df['DeepCut_resnet50_ratmovementNov5shuffle1_22500']['body'][['x', 'y', 'likelihood']]
-
-        # Convert multiindex data frame to numpy array
-        o = df.values
-
-        # add a preprocessing function here to sort data based on likelihood
-        # ...
-
-        # remove likelihood column
-        m = np.delete(o, np.arange(feature_coords-1, nfeatures*feature_coords , feature_coords), axis=1)
-
-
-        #get features for PCA/LDA
+if __name__ == '__main__':
+    from sklearn.decomposition import PCA
+    # Constants
+    nfeatures = 5
+    feature_coords = 3
+    lcal = 0
+    lsave = 1
+    
+    # open file browser
+    if len(sys.argv) > 1:
+        dataname = (sys.argv[1])
+    else:
+        Tk().withdraw() 
+        dataname = askopenfilename() # open file browser
+    #dataname = 'e3v8103_day_subclipDeepCut_resnet50_ratmovementNov5shuffle1_22500.h5'
+    
+    df = pd.read_hdf(dataname)
+    
+    # structure of dataframe 
+    # scorer    Bodyparts   x   y   likelihood
+    #            head
+    #            neck
+    #            body
+    #            rear
+    #            tail
+    
+    
+    # List columns
+    #list(df)
+    
+    #df.columns
+    
+    print(df.columns.contains)
+    # <bound method MultiIndex.__contains__ of MultiIndex(levels=[['DeepCut_resnet50_ratmovementNov5shuffle1_22500'], ['body', 'head', 'neck', 'rear', 'tail'], ['likelihood', 'x', 'y']],
+    #                   labels=[[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 2, 2, 2, 0, 0, 0, 3, 3, 3, 4, 4, 4], [1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 0]],
+    #                   names=['scorer', 'bodyparts', 'coords'])>
+    
+    
+    #df['DeepCut_resnet50_ratmovementNov5shuffle1_22500']['body'][['x', 'y', 'likelihood']]
+    
+    # Convert multiindex data frame to numpy array
+    o = df.values
+    
+    # add a preprocessing function here to sort data based on likelihood
+    # ...
+    
+    # remove likelihood column
+    m = np.delete(o, np.arange(feature_coords-1, nfeatures*feature_coords , feature_coords), axis=1)
+    
+    
+    #get features for PCA/LDA
+    if lcal == 1:
         distmat = calc_dist(m)
+        if lsave == 1:
+            np.save('distmat.npy', distmat)
         velmat = calc_velocity(distmat)
+        if lsave == 1:
+            np.save('velmat.npy', velmat)
         accelmat = calc_acceleration(velmat)
-        distfrombody = calc_dist_from_body(m)
+        if lsave == 1:
+            np.save('accelmat.npy', accelmat)
+        #distfrombody = calc_dist_from_body(m)
+    else:
+        distmat = np.load('distmat.npy')
+        velmat = np.load('velmat.npy')
+        accelmat = np.load('accelmat.npy')
 
-        # Feature matrix
-        feature_mat = np.hstack((distmat, velmat, accelmat))
-        print(feature_mat.shape)
-
-        # do pca
-        proj_data, eig_vec, eig_val  = do_pca(feature_mat)
-
-        # t-sne
-        # def do_tsnei(data, ncomponents, verbosity, iperplexity, maxiter):
-        r_tsne = do_tsnei(proj_data, 2, 0, 100, 1000)
-
-        # plot
-        plot_tsne_out(r_tsne)
-        # plot 3d plot_tsne_out_3d(r_tsne)
+    
+    # Feature matrix
+    feature_mat = np.hstack((distmat, velmat, accelmat))
+    print(feature_mat.shape)
+    
+    # kmeans for labels
+    labels = do_kmeans(feature_mat, 4)
+    if lsave == 1:
+        np.save('labels.npy', labels)
+    
+    # do pca
+    #reduced_data = PCA(n_components=15).fit_transform(feature_mat)
+    proj_data, eig_vec, eig_val, V, sigma  = do_pca(feature_mat)
+    #plot_with_labels(proj_data, labels)
+    #proj_data, eigenvectors, eigenvalues, V, sigma = do_pca(feature_mat)
+    
+    # t-sne
+    # def do_tsnei(data, ncomponents, verbosity, iperplexity, maxiter):
+    r_tsne = do_tsnei(proj_data, 2, 1, 40, 1000)
+    if lsave == 1:
+        np.save('r_tsne.npy', r_tsne)
+    
+    # plot
+    # plot_tsne_out(r_tsne)
+    # plot 3d plot_tsne_out_3d(r_tsne)
+    plot_with_labels(r_tsne, labels)
 
