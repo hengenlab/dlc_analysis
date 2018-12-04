@@ -20,12 +20,26 @@ from scipy import spatial
 
 # calculate distance
 def calc_dist(data):
-    dist_head = np.diagonal(spatial.distance.squareform(spatial.distance.pdist(data[:,0:2],'euclidean')),1)
-    dist_neck = np.diagonal(spatial.distance.squareform(spatial.distance.pdist(data[:,2:4],'euclidean')),1)
-    dist_body = np.diagonal(spatial.distance.squareform(spatial.distance.pdist(data[:,4:6],'euclidean')),1)
-    dist_rear = np.diagonal(spatial.distance.squareform(spatial.distance.pdist(data[:,6:8],'euclidean')),1)
-    dist_tail = np.diagonal(spatial.distance.squareform(spatial.distance.pdist(data[:,8:10],'euclidean')),1)
-    distmat = np.transpose([dist_head,dist_neck,dist_body,dist_rear,dist_tail])
+    data_head = data[:,0:2]
+    dist_head = np.diagonal(spatial.distance.squareform(spatial.distance.pdist(data_head,'euclidean')),1)
+
+    data_neck = data[:,2:4]
+    dist_neck = np.diagonal(spatial.distance.squareform(spatial.distance.pdist(data_neck,'euclidean')),1)
+    distmat = np.vstack((dist_head,dist_neck))
+
+    data_body = data[:,4:6]
+    dist_body = np.diagonal(spatial.distance.squareform(spatial.distance.pdist(data_body,'euclidean')),1)
+    distmat = np.vstack((distmat,dist_body))
+
+    data_rear = data[:,6:8]
+    dist_rear = np.diagonal(spatial.distance.squareform(spatial.distance.pdist(data_rear,'euclidean')),1)
+    distmat = np.vstack((distmat,dist_rear))
+
+    data_tail = data[:,8:10]
+    dist_tail = np.diagonal(spatial.distance.squareform(spatial.distance.pdist(data_tail,'euclidean')),1)
+    distmat = np.vstack((distmat,dist_tail))
+
+    distmat = np.transpose(distmat)
     return distmat
 
 # calculate velocity
@@ -135,8 +149,47 @@ def plot_with_labels(out_tsne, label):
              i = np.where(label == l)
              ax.scatter(x[i], y[i], [], label = l)
              
-        #ax.legend()
+        ax.legend()
         plt.show()
+
+def clust_features(feature_matrix,label):
+	#pull out indices of clusters
+	#blue cluster
+	cluster_1_ind = np.where(labels==0)
+	cluster_1_features = feature_mat[cluster_1_ind[0],:]
+	#red cluster
+	cluster_2_ind = np.where(labels==3)
+	cluster_2_features = feature_mat[cluster_2_ind[0],:]
+	#pink cluster
+	cluster_3_ind = np.where(labels==6)
+	cluster_3_features = feature_mat[cluster_3_ind[0],:]    
+	#green cluster
+	cluster_4_ind = np.where(labels==2)
+	cluster_4_features = feature_mat[cluster_4_ind[0],:]
+	#purple cluster
+	cluster_5_ind = np.where(labels==4)
+	cluster_5_features = feature_mat[cluster_5_ind[0],:]
+	#orange cluster
+	cluster_6_ind = np.where(labels==1)
+	cluster_6_features = feature_mat[cluster_6_ind[0],:]
+	#brown cluster
+	cluster_7_ind = np.where(labels==5)
+	cluster_7_features = feature_mat[cluster_7_ind[0],:]
+
+	#view means of each cluster for each feature
+	meandist = np.array([np.mean(cluster_1_features[:,0:5],axis=0),np.mean(cluster_2_features[:,0:5],axis=0),np.mean(cluster_3_features[:,0:5],axis=0),np.mean(cluster_4_features[:,0:5],axis=0),np.mean(cluster_5_features[:,0:5],axis=0),np.mean(cluster_6_features[:,0:5],axis=0),np.mean(cluster_7_features[:,0:5],axis=0)])
+	clust_dist = pd.DataFrame(meandist,columns=['Head_dist', 'Neck_dist', 'Body_dist', 'Rear_dist', 'Tail_dist'])
+	clust_dist.insert(0,'Cluster',pd.Series(['Blue','Red','Pink','Green','Purple','Orange','Brown']))
+
+	meanvel = np.array([np.mean(cluster_1_features[:,5:10],axis=0),np.mean(cluster_2_features[:,5:10],axis=0),np.mean(cluster_3_features[:,5:10],axis=0),np.mean(cluster_4_features[:,5:10],axis=0),np.mean(cluster_5_features[:,5:10],axis=0),np.mean(cluster_6_features[:,5:10],axis=0),np.mean(cluster_7_features[:,5:10],axis=0)])
+	clust_vel = pd.DataFrame(meanvel,columns=['Head_vel', 'Neck_vel', 'Body_vel', 'Rear_vel', 'Tail_vel'])
+	clust_vel.insert(0,'Cluster',pd.Series(['Blue','Red','Pink','Green','Purple','Orange','Brown']))
+
+	meanaccel = np.array([np.mean(cluster_1_features[:,10:15],axis=0),np.mean(cluster_2_features[:,10:15],axis=0),np.mean(cluster_3_features[:,10:15],axis=0),np.mean(cluster_4_features[:,10:15],axis=0),np.mean(cluster_5_features[:,10:15],axis=0),np.mean(cluster_6_features[:,10:15],axis=0),np.mean(cluster_7_features[:,10:15],axis=0)])
+	clust_accel = pd.DataFrame(meanaccel,columns=['Head_accel', 'Neck_accel', 'Body_accel', 'Rear_accel', 'Tail_accel'])
+	clust_accel.insert(0,'Cluster',pd.Series(['Blue','Red','Pink','Green','Purple','Orange','Brown']))
+
+	return clust_dist, clust_vel, clust_accel
 
 
 
@@ -146,15 +199,15 @@ if __name__ == '__main__':
     nfeatures = 5
     feature_coords = 3
     lcal = 0
-    lsave = 1
+    lsave = 0
     
     # open file browser
-    if len(sys.argv) > 1:
-        dataname = (sys.argv[1])
-    else:
-        Tk().withdraw() 
-        dataname = askopenfilename() # open file browser
-    #dataname = 'e3v8103_day_subclipDeepCut_resnet50_ratmovementNov5shuffle1_22500.h5'
+    # if len(sys.argv) > 1:
+    #     dataname = (sys.argv[1])
+    # else:
+    #     Tk().withdraw() 
+    #     dataname = askopenfilename() # open file browser
+    dataname = '/Users/sbrunwas/Documents/HengenLab/DeepLabCut/DeepLabCut_v1/videos/e3v8103_day_subclipDeepCut_resnet50_ratmovementNov5shuffle1_22500.h5'
     
     df = pd.read_hdf(dataname)
     
@@ -203,9 +256,9 @@ if __name__ == '__main__':
             np.save('accelmat.npy', accelmat)
         #distfrombody = calc_dist_from_body(m)
     else:
-        distmat = np.load('distmat.npy')
-        velmat = np.load('velmat.npy')
-        accelmat = np.load('accelmat.npy')
+        distmat = np.load('/Volumes/HlabShare/Animal_tracking_deeplabcut/distmat.npy')
+        velmat = np.load('/Volumes/HlabShare/Animal_tracking_deeplabcut/velmat.npy')
+        accelmat = np.load('/Volumes/HlabShare/Animal_tracking_deeplabcut/accelmat.npy')
 
     
     # Feature matrix
@@ -213,9 +266,12 @@ if __name__ == '__main__':
     print(feature_mat.shape)
     
     # kmeans for labels
-    labels = do_kmeans(feature_mat, 4)
-    if lsave == 1:
-        np.save('labels.npy', labels)
+    if lcal == 1:
+	    labels = do_kmeans(feature_mat, 4)
+	    if lsave == 1:
+	        np.save('labels.npy', labels)
+	else:
+    	labels = np.load('/Volumes/HlabShare/Animal_tracking_deeplabcut/labels_8.npy')
     
     # do pca
     #reduced_data = PCA(n_components=15).fit_transform(feature_mat)
@@ -225,12 +281,19 @@ if __name__ == '__main__':
     
     # t-sne
     # def do_tsnei(data, ncomponents, verbosity, iperplexity, maxiter):
-    r_tsne = do_tsnei(proj_data, 2, 1, 40, 1000)
-    if lsave == 1:
-        np.save('r_tsne.npy', r_tsne)
+    if lcal == 1:
+    	r_tsne = do_tsnei(proj_data, 2, 1, 40, 1000)
+    	if lsave == 1:
+        	np.save('r_tsne.npy', r_tsne)
+    else:
+    	r_tsne = np.load('/Volumes/HlabShare/Animal_tracking_deeplabcut/r_tsne_8.npy')
     
     # plot
     # plot_tsne_out(r_tsne)
     # plot 3d plot_tsne_out_3d(r_tsne)
+
     plot_with_labels(r_tsne, labels)
+
+    #Assign features to clusters
+    clust_dist, clust_vel, clust_accel =clust_features(feature_mat,labels)
 
