@@ -42,6 +42,18 @@ def calc_dist(data):
     distmat = np.transpose(distmat)
     return distmat
 
+#much faster than calc_dist, only allows 2 features (for now)
+def calc_dist_2feat(data):
+    data_body = data[:,0:2]
+    dist_body = np.sqrt(np.einsum('ij,ij->i',data_body,data_body))
+
+    data_rear = data[:,2:4]
+    dist_rear = np.sqrt(np.einsum('ij,ij->i',data_rear,data_rear))
+    distmat = np.vstack((dist_body,dist_rear))
+
+    distmat = np.transpose(distmat)
+    return distmat
+
 # calculate velocity
 def calc_velocity(distmat):
     nframes = 9000
@@ -50,6 +62,14 @@ def calc_velocity(distmat):
     timestep = vidduration/nframes
     velmat = distmat/timestep
     return velmat
+
+#takes a position matrix with time as first column, returns velocity
+def calc_velocity_wtime(timevect, distmat):
+    distdiff = np.diff(distmat,axis=0)
+    timediff = np.diff(timevect,axis=0)
+    velmat = np.divide(distdiff,np.tile(timediff,(2,1)).T)
+    return velmat
+
 
 # calculate acceleration
 def calc_acceleration(velmat):
@@ -267,10 +287,10 @@ if __name__ == '__main__':
     
     # kmeans for labels
     if lcal == 1:
-	    labels = do_kmeans(feature_mat, 4)
-	    if lsave == 1:
-	        np.save('labels.npy', labels)
-	else:
+        labels = do_kmeans(feature_mat, 4)
+        if lsave == 1:
+            np.save('labels.npy', labels)
+    else:
     	labels = np.load('/Volumes/HlabShare/Animal_tracking_deeplabcut/labels_8.npy')
     
     # do pca
